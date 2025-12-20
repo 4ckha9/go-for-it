@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活動記録 - Go For It</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">Go For It</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="blog.html">活動記録</a></li>
+                <li><a href="screenshots.html">SS</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero" style="height: 40vh;">
+        <div class="hero-content">
+            <h1>FF14活動記録</h1>
+            <p>冒険の記録</p>
+        </div>
+    </section>
+
+    <section class="section">
+        <div id="loading" class="loading">読み込み中...</div>
+        <div id="error" class="error" style="display: none;"></div>
+        <div class="blog-posts" id="blogPosts"></div>
+    </section>
+
+    <script src="blog.js"></script>
+</body>
+</html>

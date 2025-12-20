@@ -1,5 +1,5 @@
 // GitHubリポジトリの設定
-const GITHUB_USER = 'your-username';  // あなたのGitHubユーザー名
+const GITHUB_USER = '4ckh9';  // あなたのGitHubユーザー名
 const GITHUB_REPO = 'go-for-it';      // リポジトリ名
 const BLOG_FOLDER = 'blog';            // mdファイルを置くフォルダ名
 

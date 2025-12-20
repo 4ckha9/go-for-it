@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Final Fantasy XIV",
+    "url": "https://jp.finalfantasyxiv.com/",
+    "emoji": "⚔️",
+    "description": "メインで活動しているMMORPG"
+  },
+  {
+    "title": "Apex Legends",
+    "url": "https://www.ea.com/games/apex-legends",
+    "emoji": "🎯",
+    "description": "カジュアルにプレイ中のバトロワFPS"
+  },
+  {
+    "title": "Portal 2",
+    "url": "https://store.steampowered.com/app/620/Portal_2/",
+    "emoji": "🧩",
+    "description": "名作パズルゲーム。協力プレイが楽しい"
+  }
+]

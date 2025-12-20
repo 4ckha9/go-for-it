@@ -1,5 +1,5 @@
 // GitHubリポジトリの設定
-const GITHUB_USER = 'your-username';  // あなたのGitHubユーザー名
+const GITHUB_USER = '4ckha9';  // あなたのGitHubユーザー名
 const GITHUB_REPO = 'go-for-it';      // リポジトリ名
 const SCREENSHOT_FOLDER = 'screenshots';  // 画像を置くフォルダ名
 

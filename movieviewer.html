@@ -2,24 +2,35 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>攻略同期ツール：タブ判別対応版</title>
+    <title>攻略同期ツール：Next表示版</title>
     <style>
         body { display: flex; flex-direction: column; height: 100vh; margin: 0; font-family: sans-serif; background: #121212; color: #fff; overflow: hidden; }
         #header { padding: 12px; background: #222; display: flex; gap: 10px; border-bottom: 2px solid #333; align-items: flex-end; }
         .input-group { display: flex; flex-direction: column; gap: 4px; }
         label { font-size: 10px; color: #aaa; font-weight: bold; }
-        input { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: #fff; width: 180px; font-size: 12px; }
-        button { cursor: pointer; background: #E91E63; color: white; border: none; border-radius: 4px; padding: 8px 15px; font-weight: bold; }
+        input { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: #fff; width: 170px; font-size: 12px; }
+        button { cursor: pointer; background: #0081a7; color: white; border: none; border-radius: 4px; padding: 8px 15px; font-weight: bold; }
         
         #main-container { display: flex; flex: 1; overflow: hidden; }
         #video-section { flex: 1.2; position: relative; display: flex; flex-direction: column; background: #000; }
         #sheet-section { flex: 1; border-left: 2px solid #333; background: #fff; }
         iframe { width: 100%; height: 100%; border: none; }
 
-        #sync-overlay { background: rgba(0, 0, 0, 0.9); padding: 20px; border-top: 4px solid #E91E63; }
-        .phase-label { color: #f48fb1; font-size: 16px; margin-bottom: 4px; font-weight: bold; }
-        .gimmick-label { color: #fff; font-size: 32px; font-weight: bold; line-height: 1.2; }
-        .time-label { color: #ffeb3b; font-family: monospace; font-size: 24px; margin-right: 20px; border: 1px solid #ffeb3b; padding: 2px 8px; border-radius: 4px; }
+        /* 通知エリア（オーバーレイ） */
+        #sync-overlay { background: rgba(0, 0, 0, 0.9); padding: 20px; border-top: 4px solid #0081a7; display: flex; flex-direction: column; gap: 10px; }
+        
+        .current-row { display: flex; align-items: center; border-left: 5px solid #00afb9; padding-left: 15px; }
+        .next-row { display: flex; align-items: center; border-left: 5px solid #f07167; padding-left: 15px; opacity: 0.8; margin-left: 20px; }
+        
+        .label-tag { font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 3px; margin-right: 10px; text-transform: uppercase; }
+        .current-tag { background: #00afb9; color: #000; }
+        .next-tag { background: #f07167; color: #000; }
+
+        .phase-text { color: #4fc3f7; font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+        .gimmick-text { font-size: 28px; font-weight: bold; }
+        .next-gimmick-text { font-size: 20px; font-weight: bold; color: #ccc; }
+        .time-box { font-family: monospace; font-size: 24px; color: #ffeb3b; min-width: 80px; }
+        
         #status-bar { font-size: 11px; color: #888; background: #000; padding: 4px 15px; }
     </style>
 </head>
@@ -27,15 +38,15 @@
 
 <div id="header">
     <div class="input-group">
-        <label>1. シートのURL (タブを開いた状態のもの)</label>
-        <input type="text" id="sheetUrl" placeholder="https://docs.google.com/..." value="">
+        <label>1. シートURL(gid含む)</label>
+        <input type="text" id="sheetUrl" placeholder="URLを貼付">
     </div>
     <div class="input-group">
-        <label>2. YouTube 動画ID</label>
-        <input type="text" id="videoId" placeholder="例: dQw4w9WgXcQ">
+        <label>2. YouTube ID</label>
+        <input type="text" id="videoId" placeholder="ID">
     </div>
     <div class="input-group">
-        <label>3. 戦闘開始(動画内時間)</label>
+        <label>3. 戦闘開始時間</label>
         <input type="text" id="startTimeInput" value="0:00">
     </div>
     <button onclick="startApp()">同期開始</button>
@@ -45,13 +56,19 @@
     <div id="video-section">
         <div id="player"></div>
         <div id="sync-overlay">
-            <div id="phase-display" class="phase-label">PHASE: ---</div>
-            <div id="current-info">
-                <span id="time-display" class="time-label">0:00</span>
-                <span id="gimmick-display" class="gimmick-label">待機中</span>
+            <div id="phase-display" class="phase-text">PHASE: ---</div>
+            <div class="current-row">
+                <span class="label-tag current-tag">NOW</span>
+                <span id="time-display" class="time-box">0:00</span>
+                <span id="gimmick-display" class="gimmick-text">待機中</span>
+            </div>
+            <div class="next-row">
+                <span class="label-tag next-tag">NEXT</span>
+                <span id="next-time-display" class="time-box" style="font-size: 18px;">--:--</span>
+                <span id="next-gimmick-display" class="next-gimmick-text">---</span>
             </div>
         </div>
-        <div id="status-bar">準備完了：URLを入力してボタンを押してください</div>
+        <div id="status-bar">準備完了</div>
     </div>
     <div id="sheet-section">
         <iframe id="sheetFrame"></iframe>
@@ -78,21 +95,16 @@
         const start = document.getElementById('startTimeInput').value.trim();
 
         if(!url || !vid) return alert("URLとYouTube IDを入力してください");
-
-        // --- 表示用URL (iframe) ---
+        
         document.getElementById('sheetFrame').src = url;
         
-        // --- データ取得用URL (CSV) の作成 ---
         let csvUrl = "";
-        const spreadsheetIdMatch = url.match(/\/d\/([^\/]+)/);
-        if (spreadsheetIdMatch) {
-            const id = spreadsheetIdMatch[1];
+        const idMatch = url.match(/\/d\/([^\/]+)/);
+        if (idMatch) {
+            const id = idMatch[1];
             const gidMatch = url.match(/gid=([0-9]+)/);
             const gid = gidMatch ? gidMatch[1] : "0";
-            // CSV出力用URLを強制生成
             csvUrl = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`;
-        } else {
-            return alert("URLの形式が正しくありません");
         }
 
         player.loadVideoById(vid);
@@ -100,30 +112,22 @@
 
         try {
             const res = await fetch(csvUrl);
-            if (!res.ok) throw new Error();
             const csvText = await res.text();
-            
             const rows = csvText.split(/\r?\n/);
             timelineData = [];
 
-            // 31行目(index 30)からループ
             for (let i = 30; i < rows.length; i++) {
                 const cols = parseCSVLine(rows[i]);
                 if (cols && cols.length >= 5) {
-                    const phase = cols[1];   // B列
-                    const timeStr = cols[3]; // D列
-                    const gimmick = cols[4]; // E列
-                    const sec = timeToSec(timeStr);
+                    const sec = timeToSec(cols[3]);
                     if (sec !== null) {
-                        timelineData.push({ sec: sec, phase: phase, gimmick: gimmick });
+                        timelineData.push({ sec: sec, phase: cols[1], gimmick: cols[4], timeStr: cols[3] });
                     }
                 }
             }
             timelineData.sort((a, b) => a.sec - b.sec);
-            document.getElementById('status-bar').innerText = `同期成功：${timelineData.length}件のギミックを取得しました（31行目以降）`;
-        } catch (e) {
-            document.getElementById('status-bar').innerText = "エラー：アクセス権限がありません。[ファイル] > [ウェブに公開] を実行してください。";
-        }
+            document.getElementById('status-bar').innerText = `読込成功: ${timelineData.length}件`;
+        } catch (e) { alert("読込エラー。ウェブ公開設定等を確認してください。"); }
     }
 
     function parseCSVLine(line) {
@@ -142,7 +146,6 @@
     function timeToSec(str) {
         if(!str || !str.includes(':')) return null;
         const p = str.trim().split(':').map(Number);
-        if(p.some(isNaN)) return null;
         return p.length === 2 ? p[0]*60 + p[1] : p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : null;
     }
 
@@ -150,18 +153,32 @@
         if(timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             const combatTime = player.getCurrentTime() - offsetSeconds;
+            
+            // 時間表示
             const m = Math.floor(Math.max(0, combatTime) / 60);
             const s = Math.floor(Math.max(0, combatTime) % 60);
             document.getElementById('time-display').innerText = `${m}:${s.toString().padStart(2,'0')}`;
 
-            let current = null;
-            for(let item of timelineData) {
-                if(combatTime >= item.sec) current = item;
+            // 現在と次のギミックを判定
+            let currentIndex = -1;
+            for(let i = 0; i < timelineData.length; i++) {
+                if(combatTime >= timelineData[i].sec) currentIndex = i;
                 else break;
             }
-            if(current) {
-                document.getElementById('phase-display').innerText = `PHASE: ${current.phase || '---'}`;
-                document.getElementById('gimmick-display').innerText = current.gimmick || '---';
+
+            if(currentIndex !== -1) {
+                const cur = timelineData[currentIndex];
+                document.getElementById('phase-display').innerText = `PHASE: ${cur.phase || '---'}`;
+                document.getElementById('gimmick-display').innerText = cur.gimmick || '---';
+
+                // 次のギミック（もしあれば）
+                if(currentIndex + 1 < timelineData.length) {
+                    const next = timelineData[currentIndex + 1];
+                    document.getElementById('next-time-display').innerText = next.timeStr;
+                    document.getElementById('next-gimmick-display').innerText = next.gimmick;
+                } else {
+                    document.getElementById('next-gimmick-display').innerText = "END";
+                }
             }
         }, 250);
     }

@@ -2,61 +2,60 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>攻略同期ツール：Next表示版</title>
+    <title>攻略同期ツール：未来予測＆リサイズ版</title>
     <style>
         body { display: flex; flex-direction: column; height: 100vh; margin: 0; font-family: sans-serif; background: #121212; color: #fff; overflow: hidden; }
-        #header { padding: 12px; background: #222; display: flex; gap: 10px; border-bottom: 2px solid #333; align-items: flex-end; }
+        #header { padding: 10px; background: #222; display: flex; gap: 10px; border-bottom: 2px solid #333; align-items: flex-end; flex-shrink: 0; }
         .input-group { display: flex; flex-direction: column; gap: 4px; }
         label { font-size: 10px; color: #aaa; font-weight: bold; }
-        input { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #333; color: #fff; width: 170px; font-size: 12px; }
-        button { cursor: pointer; background: #0081a7; color: white; border: none; border-radius: 4px; padding: 8px 15px; font-weight: bold; }
+        input { padding: 6px; border-radius: 4px; border: 1px solid #444; background: #333; color: #fff; width: 140px; font-size: 12px; }
+        button { cursor: pointer; background: #0081a7; color: white; border: none; border-radius: 4px; padding: 6px 12px; font-weight: bold; }
         
-        #main-container { display: flex; flex: 1; overflow: hidden; }
-        #video-section { flex: 1.2; position: relative; display: flex; flex-direction: column; background: #000; }
-        #sheet-section { flex: 1; border-left: 2px solid #333; background: #fff; }
+        /* メインコンテナとリサイズ設定 */
+        #main-container { display: flex; flex: 1; overflow: hidden; width: 100%; position: relative; }
+        #video-section { min-width: 300px; position: relative; display: flex; flex-direction: column; background: #000; flex: 1; }
+        
+        /* リサイズバー */
+        #resizer { width: 8px; cursor: col-resize; background: #333; transition: 0.2s; }
+        #resizer:hover { background: #0081a7; }
+
+        #sheet-section { min-width: 200px; background: #fff; width: 450px; } /* 初期幅 */
         iframe { width: 100%; height: 100%; border: none; }
 
-        /* 通知エリア（オーバーレイ） */
-        #sync-overlay { background: rgba(0, 0, 0, 0.9); padding: 20px; border-top: 4px solid #0081a7; display: flex; flex-direction: column; gap: 10px; }
+        /* 通知エリア */
+        #sync-overlay { background: rgba(0, 0, 0, 0.95); padding: 15px; border-top: 4px solid #0081a7; display: flex; flex-direction: column; gap: 8px; }
+        .current-row { display: flex; align-items: center; border-left: 5px solid #00afb9; padding-left: 10px; }
+        .next-row { display: flex; align-items: center; border-left: 5px solid #f07167; padding-left: 10px; margin-left: 15px; }
         
-        .current-row { display: flex; align-items: center; border-left: 5px solid #00afb9; padding-left: 15px; }
-        .next-row { display: flex; align-items: center; border-left: 5px solid #f07167; padding-left: 15px; opacity: 0.8; margin-left: 20px; }
-        
-        .label-tag { font-size: 12px; font-weight: bold; padding: 2px 6px; border-radius: 3px; margin-right: 10px; text-transform: uppercase; }
-        .current-tag { background: #00afb9; color: #000; }
-        .next-tag { background: #f07167; color: #000; }
+        /* 未来予測エリア */
+        #future-predictions { display: flex; gap: 10px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #444; overflow-x: auto; }
+        .future-box { background: #222; padding: 5px 8px; border-radius: 4px; min-width: 100px; border-top: 2px solid #aaa; }
+        .future-box .time-label { font-size: 10px; color: #aaa; }
+        .future-box .gimmick-name { font-size: 12px; font-weight: bold; color: #eee; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
-        .phase-text { color: #4fc3f7; font-size: 14px; font-weight: bold; margin-bottom: 2px; }
-        .gimmick-text { font-size: 28px; font-weight: bold; }
-        .next-gimmick-text { font-size: 20px; font-weight: bold; color: #ccc; }
-        .time-box { font-family: monospace; font-size: 24px; color: #ffeb3b; min-width: 80px; }
-        
-        #status-bar { font-size: 11px; color: #888; background: #000; padding: 4px 15px; }
+        .label-tag { font-size: 10px; font-weight: bold; padding: 1px 4px; border-radius: 3px; margin-right: 8px; color: #000; }
+        .current-tag { background: #00afb9; }
+        .next-tag { background: #f07167; }
+        .gimmick-text { font-size: 24px; font-weight: bold; }
+        .next-gimmick-text { font-size: 18px; color: #ccc; }
+        .time-box { font-family: monospace; font-size: 20px; color: #ffeb3b; min-width: 60px; }
+        #status-bar { font-size: 11px; color: #888; background: #000; padding: 2px 15px; }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div class="input-group">
-        <label>1. シートURL(gid含む)</label>
-        <input type="text" id="sheetUrl" placeholder="URLを貼付">
-    </div>
-    <div class="input-group">
-        <label>2. YouTube ID</label>
-        <input type="text" id="videoId" placeholder="ID">
-    </div>
-    <div class="input-group">
-        <label>3. 戦闘開始時間</label>
-        <input type="text" id="startTimeInput" value="0:00">
-    </div>
+    <div class="input-group"><label>1. シートURL</label><input type="text" id="sheetUrl"></div>
+    <div class="input-group"><label>2. YouTube ID</label><input type="text" id="videoId"></div>
+    <div class="input-group"><label>3. 戦闘開始時間</label><input type="text" id="startTimeInput" value="0:00"></div>
     <button onclick="startApp()">同期開始</button>
 </div>
 
 <div id="main-container">
     <div id="video-section">
-        <div id="player"></div>
+        <div id="player" style="flex:1;"></div>
         <div id="sync-overlay">
-            <div id="phase-display" class="phase-text">PHASE: ---</div>
+            <div id="phase-display" style="color:#4fc3f7; font-size:12px; font-weight:bold;">PHASE: ---</div>
             <div class="current-row">
                 <span class="label-tag current-tag">NOW</span>
                 <span id="time-display" class="time-box">0:00</span>
@@ -64,12 +63,21 @@
             </div>
             <div class="next-row">
                 <span class="label-tag next-tag">NEXT</span>
-                <span id="next-time-display" class="time-box" style="font-size: 18px;">--:--</span>
+                <span id="next-time-display" class="time-box" style="font-size:16px;">--:--</span>
                 <span id="next-gimmick-display" class="next-gimmick-text">---</span>
+            </div>
+            <div id="future-predictions">
+                <div class="future-box"><div class="time-label">+30s</div><div id="f30" class="gimmick-name">---</div></div>
+                <div class="future-box"><div class="time-label">+60s</div><div id="f60" class="gimmick-name">---</div></div>
+                <div class="future-box"><div class="time-label">+90s</div><div id="f90" class="gimmick-name">---</div></div>
+                <div class="future-box"><div class="time-label">+120s</div><div id="f120" class="gimmick-name">---</div></div>
             </div>
         </div>
         <div id="status-bar">準備完了</div>
     </div>
+
+    <div id="resizer"></div>
+
     <div id="sheet-section">
         <iframe id="sheetFrame"></iframe>
     </div>
@@ -82,105 +90,98 @@
 
     var player, offsetSeconds = 0, timerInterval, timelineData = [];
 
+    // リサイズ機能の実装
+    const resizer = document.getElementById('resizer');
+    const sheetSection = document.getElementById('sheet-section');
+    let isResizing = false;
+
+    resizer.addEventListener('mousedown', (e) => { isResizing = true; document.body.style.cursor = 'col-resize'; });
+    window.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        const offsetRight = document.body.offsetWidth - e.clientX;
+        sheetSection.style.width = offsetRight + 'px';
+    });
+    window.addEventListener('mouseup', () => { isResizing = false; document.body.style.cursor = 'default'; });
+
     function onYouTubeIframeAPIReady() {
-        player = new YT.Player('player', {
-            height: '100%', width: '100%', videoId: '',
-            events: { 'onStateChange': (e) => { if(e.data == 1) runLoop(); else clearInterval(timerInterval); } }
-        });
+        player = new YT.Player('player', { height: '100%', width: '100%', videoId: '', events: { 'onStateChange': (e) => { if(e.data == 1) runLoop(); else clearInterval(timerInterval); } } });
     }
 
     async function startApp() {
         const url = document.getElementById('sheetUrl').value.trim();
         const vid = document.getElementById('videoId').value.trim();
         const start = document.getElementById('startTimeInput').value.trim();
-
-        if(!url || !vid) return alert("URLとYouTube IDを入力してください");
-        
+        if(!url || !vid) return alert("URLとIDを入力してください");
         document.getElementById('sheetFrame').src = url;
-        
-        let csvUrl = "";
         const idMatch = url.match(/\/d\/([^\/]+)/);
-        if (idMatch) {
-            const id = idMatch[1];
-            const gidMatch = url.match(/gid=([0-9]+)/);
-            const gid = gidMatch ? gidMatch[1] : "0";
-            csvUrl = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`;
-        }
-
+        const gidMatch = url.match(/gid=([0-9]+)/);
+        const csvUrl = `https://docs.google.com/spreadsheets/d/${idMatch[1]}/export?format=csv&gid=${gidMatch ? gidMatch[1] : "0"}`;
         player.loadVideoById(vid);
         offsetSeconds = timeToSec(start);
-
         try {
             const res = await fetch(csvUrl);
             const csvText = await res.text();
             const rows = csvText.split(/\r?\n/);
             timelineData = [];
-
             for (let i = 30; i < rows.length; i++) {
                 const cols = parseCSVLine(rows[i]);
                 if (cols && cols.length >= 5) {
                     const sec = timeToSec(cols[3]);
-                    if (sec !== null) {
-                        timelineData.push({ sec: sec, phase: cols[1], gimmick: cols[4], timeStr: cols[3] });
-                    }
+                    if (sec !== null) timelineData.push({ sec: sec, phase: cols[1], gimmick: cols[4], timeStr: cols[3] });
                 }
             }
             timelineData.sort((a, b) => a.sec - b.sec);
             document.getElementById('status-bar').innerText = `読込成功: ${timelineData.length}件`;
-        } catch (e) { alert("読込エラー。ウェブ公開設定等を確認してください。"); }
+        } catch (e) { alert("読込エラー"); }
     }
 
     function parseCSVLine(line) {
-        const result = [];
-        let cur = "", inQuote = false;
+        const result = []; let cur = "", inQuote = false;
         for (let i = 0; i < line.length; i++) {
             const char = line[i];
             if (char === '"') inQuote = !inQuote;
             else if (char === ',' && !inQuote) { result.push(cur.trim()); cur = ""; }
             else cur += char;
         }
-        result.push(cur.trim());
-        return result;
+        result.push(cur.trim()); return result;
     }
 
     function timeToSec(str) {
         if(!str || !str.includes(':')) return null;
         const p = str.trim().split(':').map(Number);
-        return p.length === 2 ? p[0]*60 + p[1] : p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : null;
+        return p.length === 2 ? p[0]*60 + p[1] : p[0]*3600 + p[1]*60 + p[2];
     }
 
     function runLoop() {
         if(timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             const combatTime = player.getCurrentTime() - offsetSeconds;
-            
-            // 時間表示
             const m = Math.floor(Math.max(0, combatTime) / 60);
             const s = Math.floor(Math.max(0, combatTime) % 60);
             document.getElementById('time-display').innerText = `${m}:${s.toString().padStart(2,'0')}`;
 
-            // 現在と次のギミックを判定
             let currentIndex = -1;
             for(let i = 0; i < timelineData.length; i++) {
-                if(combatTime >= timelineData[i].sec) currentIndex = i;
-                else break;
+                if(combatTime >= timelineData[i].sec) currentIndex = i; else break;
             }
 
             if(currentIndex !== -1) {
                 const cur = timelineData[currentIndex];
                 document.getElementById('phase-display').innerText = `PHASE: ${cur.phase || '---'}`;
                 document.getElementById('gimmick-display').innerText = cur.gimmick || '---';
-
-                // 次のギミック（もしあれば）
                 if(currentIndex + 1 < timelineData.length) {
-                    const next = timelineData[currentIndex + 1];
-                    document.getElementById('next-time-display').innerText = next.timeStr;
-                    document.getElementById('next-gimmick-display').innerText = next.gimmick;
-                } else {
-                    document.getElementById('next-gimmick-display').innerText = "END";
+                    document.getElementById('next-time-display').innerText = timelineData[currentIndex+1].timeStr;
+                    document.getElementById('next-gimmick-display').innerText = timelineData[currentIndex+1].gimmick;
                 }
             }
-        }, 250);
+
+            // 未来予測の更新
+            [30, 60, 90, 120].forEach(offset => {
+                const targetTime = combatTime + offset;
+                let found = timelineData.filter(item => item.sec <= targetTime).pop();
+                document.getElementById('f' + offset).innerText = found ? found.gimmick : "---";
+            });
+        }, 300);
     }
 </script>
 </body>

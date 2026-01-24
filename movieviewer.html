@@ -2,50 +2,47 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>攻略同期ツール：未来予測＆リサイズ版</title>
+    <title>レイド同期ツール：ジョブ・スキル対応版</title>
     <style>
-        body { display: flex; flex-direction: column; height: 100vh; margin: 0; font-family: sans-serif; background: #121212; color: #fff; overflow: hidden; }
-        #header { padding: 10px; background: #222; display: flex; gap: 10px; border-bottom: 2px solid #333; align-items: flex-end; flex-shrink: 0; }
-        .input-group { display: flex; flex-direction: column; gap: 4px; }
-        label { font-size: 10px; color: #aaa; font-weight: bold; }
-        input { padding: 6px; border-radius: 4px; border: 1px solid #444; background: #333; color: #fff; width: 140px; font-size: 12px; }
+        body { display: flex; flex-direction: column; height: 100vh; margin: 0; font-family: 'Segoe UI', sans-serif; background: #121212; color: #fff; overflow: hidden; }
+        #header { padding: 10px; background: #222; display: flex; gap: 8px; border-bottom: 2px solid #333; align-items: flex-end; flex-shrink: 0; }
+        .input-group { display: flex; flex-direction: column; gap: 2px; }
+        label { font-size: 9px; color: #aaa; font-weight: bold; }
+        input { padding: 6px; border-radius: 4px; border: 1px solid #444; background: #333; color: #fff; width: 130px; font-size: 11px; }
         button { cursor: pointer; background: #0081a7; color: white; border: none; border-radius: 4px; padding: 6px 12px; font-weight: bold; }
         
-        /* メインコンテナとリサイズ設定 */
-        #main-container { display: flex; flex: 1; overflow: hidden; width: 100%; position: relative; }
+        #main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
         #video-section { min-width: 300px; position: relative; display: flex; flex-direction: column; background: #000; flex: 1; }
-        
-        /* リサイズバー */
         #resizer { width: 8px; cursor: col-resize; background: #333; transition: 0.2s; }
         #resizer:hover { background: #0081a7; }
-
-        #sheet-section { min-width: 200px; background: #fff; width: 450px; } /* 初期幅 */
+        #sheet-section { min-width: 100px; background: #fff; width: 400px; }
         iframe { width: 100%; height: 100%; border: none; }
 
-        /* 通知エリア */
-        #sync-overlay { background: rgba(0, 0, 0, 0.95); padding: 15px; border-top: 4px solid #0081a7; display: flex; flex-direction: column; gap: 8px; }
-        .current-row { display: flex; align-items: center; border-left: 5px solid #00afb9; padding-left: 10px; }
-        .next-row { display: flex; align-items: center; border-left: 5px solid #f07167; padding-left: 10px; margin-left: 15px; }
+        /* 同期通知エリア */
+        #sync-overlay { background: rgba(0, 0, 0, 0.95); padding: 12px; border-top: 4px solid #0081a7; }
+        .current-main { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 10px; }
+        .time-box { font-family: monospace; font-size: 24px; color: #ffeb3b; background: #222; padding: 2px 8px; border-radius: 4px; }
         
-        /* 未来予測エリア */
-        #future-predictions { display: flex; gap: 10px; margin-top: 5px; padding-top: 5px; border-top: 1px solid #444; overflow-x: auto; }
-        .future-box { background: #222; padding: 5px 8px; border-radius: 4px; min-width: 100px; border-top: 2px solid #aaa; }
-        .future-box .time-label { font-size: 10px; color: #aaa; }
-        .future-box .gimmick-name { font-size: 12px; font-weight: bold; color: #eee; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        /* スキルアイコン・ジョブ表示エリア */
+        #job-skills-container { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .skill-badge { background: #333; border: 1px solid #555; border-radius: 4px; padding: 4px 8px; display: flex; flex-direction: column; align-items: center; min-width: 60px; }
+        .job-name { font-size: 10px; color: #4fc3f7; margin-bottom: 2px; }
+        .skill-icon { width: 32px; height: 32px; object-fit: contain; margin-bottom: 2px; }
+        .skill-name { font-size: 11px; font-weight: bold; text-align: center; }
+        .switch-text { color: #ffeb3b !important; } /* スイッチが含まれる場合は黄色 */
 
-        .label-tag { font-size: 10px; font-weight: bold; padding: 1px 4px; border-radius: 3px; margin-right: 8px; color: #000; }
-        .current-tag { background: #00afb9; }
-        .next-tag { background: #f07167; }
-        .gimmick-text { font-size: 24px; font-weight: bold; }
-        .next-gimmick-text { font-size: 18px; color: #ccc; }
-        .time-box { font-family: monospace; font-size: 20px; color: #ffeb3b; min-width: 60px; }
-        #status-bar { font-size: 11px; color: #888; background: #000; padding: 2px 15px; }
+        /* 未来予測 */
+        #future-predictions { display: flex; gap: 8px; margin-top: 10px; padding-top: 8px; border-top: 1px solid #444; }
+        .future-box { background: #222; padding: 4px 8px; border-radius: 4px; flex: 1; border-top: 2px solid #666; font-size: 11px; }
+        .future-box .f-time { color: #aaa; font-size: 9px; }
+
+        #status-bar { font-size: 10px; color: #888; background: #000; padding: 2px 10px; }
     </style>
 </head>
 <body>
 
 <div id="header">
-    <div class="input-group"><label>1. シートURL</label><input type="text" id="sheetUrl"></div>
+    <div class="input-group"><label>1. シートURL(gid含)</label><input type="text" id="sheetUrl"></div>
     <div class="input-group"><label>2. YouTube ID</label><input type="text" id="videoId"></div>
     <div class="input-group"><label>3. 戦闘開始時間</label><input type="text" id="startTimeInput" value="0:00"></div>
     <button onclick="startApp()">同期開始</button>
@@ -55,32 +52,25 @@
     <div id="video-section">
         <div id="player" style="flex:1;"></div>
         <div id="sync-overlay">
-            <div id="phase-display" style="color:#4fc3f7; font-size:12px; font-weight:bold;">PHASE: ---</div>
-            <div class="current-row">
-                <span class="label-tag current-tag">NOW</span>
-                <span id="time-display" class="time-box">0:00</span>
-                <span id="gimmick-display" class="gimmick-text">待機中</span>
-            </div>
-            <div class="next-row">
-                <span class="label-tag next-tag">NEXT</span>
-                <span id="next-time-display" class="time-box" style="font-size:16px;">--:--</span>
-                <span id="next-gimmick-display" class="next-gimmick-text">---</span>
+            <div id="phase-display" style="color:#aaa; font-size:11px; font-weight:bold;">PHASE: ---</div>
+            <div class="current-main">
+                <div id="time-display" class="time-box">0:00</div>
+                <div style="flex:1;">
+                    <div id="gimmick-display" style="font-size: 22px; font-weight: bold;">待機中</div>
+                    <div id="job-skills-container"></div>
+                </div>
             </div>
             <div id="future-predictions">
-                <div class="future-box"><div class="time-label">+30s</div><div id="f30" class="gimmick-name">---</div></div>
-                <div class="future-box"><div class="time-label">+60s</div><div id="f60" class="gimmick-name">---</div></div>
-                <div class="future-box"><div class="time-label">+90s</div><div id="f90" class="gimmick-name">---</div></div>
-                <div class="future-box"><div class="time-label">+120s</div><div id="f120" class="gimmick-name">---</div></div>
+                <div class="future-box"><div class="f-time">+30s</div><div id="f30">---</div></div>
+                <div class="future-box"><div class="f-time">+60s</div><div id="f60">---</div></div>
+                <div class="future-box"><div class="f-time">+90s</div><div id="f90">---</div></div>
+                <div class="future-box"><div class="f-time">+120s</div><div id="f120">---</div></div>
             </div>
         </div>
         <div id="status-bar">準備完了</div>
     </div>
-
     <div id="resizer"></div>
-
-    <div id="sheet-section">
-        <iframe id="sheetFrame"></iframe>
-    </div>
+    <div id="sheet-section"><iframe id="sheetFrame"></iframe></div>
 </div>
 
 <script>
@@ -89,18 +79,13 @@
     document.head.appendChild(tag);
 
     var player, offsetSeconds = 0, timerInterval, timelineData = [];
+    var jobNames = [], skillIcons = [];
 
-    // リサイズ機能の実装
-    const resizer = document.getElementById('resizer');
-    const sheetSection = document.getElementById('sheet-section');
+    // リサイズ機能
+    const resizer = document.getElementById('resizer'), sheetSection = document.getElementById('sheet-section');
     let isResizing = false;
-
-    resizer.addEventListener('mousedown', (e) => { isResizing = true; document.body.style.cursor = 'col-resize'; });
-    window.addEventListener('mousemove', (e) => {
-        if (!isResizing) return;
-        const offsetRight = document.body.offsetWidth - e.clientX;
-        sheetSection.style.width = offsetRight + 'px';
-    });
+    resizer.addEventListener('mousedown', () => { isResizing = true; document.body.style.cursor = 'col-resize'; });
+    window.addEventListener('mousemove', (e) => { if (!isResizing) return; sheetSection.style.width = (document.body.offsetWidth - e.clientX) + 'px'; });
     window.addEventListener('mouseup', () => { isResizing = false; document.body.style.cursor = 'default'; });
 
     function onYouTubeIframeAPIReady() {
@@ -110,29 +95,59 @@
     async function startApp() {
         const url = document.getElementById('sheetUrl').value.trim();
         const vid = document.getElementById('videoId').value.trim();
-        const start = document.getElementById('startTimeInput').value.trim();
         if(!url || !vid) return alert("URLとIDを入力してください");
         document.getElementById('sheetFrame').src = url;
-        const idMatch = url.match(/\/d\/([^\/]+)/);
-        const gidMatch = url.match(/gid=([0-9]+)/);
+
+        const idMatch = url.match(/\/d\/([^\/]+)/), gidMatch = url.match(/gid=([0-9]+)/);
         const csvUrl = `https://docs.google.com/spreadsheets/d/${idMatch[1]}/export?format=csv&gid=${gidMatch ? gidMatch[1] : "0"}`;
+        
         player.loadVideoById(vid);
-        offsetSeconds = timeToSec(start);
+        offsetSeconds = timeToSec(document.getElementById('startTimeInput').value);
+
         try {
             const res = await fetch(csvUrl);
             const csvText = await res.text();
-            const rows = csvText.split(/\r?\n/);
+            const rows = csvText.split(/\r?\n/).map(row => parseCSVLine(row));
+            
+            // 25行目(Job), 26行目(Icon)の取得 (Indexは-1)
+            jobNames = rows[24] || [];
+            skillIcons = rows[25] || [];
+
             timelineData = [];
+            // 31行目から解析
             for (let i = 30; i < rows.length; i++) {
-                const cols = parseCSVLine(rows[i]);
-                if (cols && cols.length >= 5) {
-                    const sec = timeToSec(cols[3]);
-                    if (sec !== null) timelineData.push({ sec: sec, phase: cols[1], gimmick: cols[4], timeStr: cols[3] });
+                const cols = rows[i];
+                if (!cols || cols.length < 5) continue;
+                
+                const timeStr = cols[3];
+                const sec = timeToSec(timeStr);
+                
+                // マイナス時間はスルー
+                if (sec === null || sec < 0) continue;
+
+                // K列(Index 10)からEF列(Index 135)までのスキルチェック
+                let activeSkills = [];
+                for (let j = 10; j <= 135; j++) {
+                    if (cols[j] && cols[j].toUpperCase() === "TRUE") {
+                        activeSkills.push({
+                            job: jobNames[j] || "",
+                            icon: skillIcons[j] || "",
+                            skillName: "" // 名前は必要なら別の行から取れますが、今回はIconとJobを優先
+                        });
+                    }
                 }
+
+                timelineData.push({
+                    sec: sec,
+                    phase: cols[1],
+                    gimmick: cols[4],
+                    timeStr: timeStr,
+                    skills: activeSkills
+                });
             }
             timelineData.sort((a, b) => a.sec - b.sec);
             document.getElementById('status-bar').innerText = `読込成功: ${timelineData.length}件`;
-        } catch (e) { alert("読込エラー"); }
+        } catch (e) { alert("読込エラー。ウェブ公開設定等を確認してください。"); }
     }
 
     function parseCSVLine(line) {
@@ -149,37 +164,48 @@
     function timeToSec(str) {
         if(!str || !str.includes(':')) return null;
         const p = str.trim().split(':').map(Number);
-        return p.length === 2 ? p[0]*60 + p[1] : p[0]*3600 + p[1]*60 + p[2];
+        const res = p.length === 2 ? p[0]*60 + p[1] : p[0]*3600 + p[1]*60 + p[2];
+        return isNaN(res) ? null : res;
     }
 
     function runLoop() {
         if(timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             const combatTime = player.getCurrentTime() - offsetSeconds;
-            const m = Math.floor(Math.max(0, combatTime) / 60);
-            const s = Math.floor(Math.max(0, combatTime) % 60);
+            const m = Math.floor(Math.max(0, combatTime) / 60), s = Math.floor(Math.max(0, combatTime) % 60);
             document.getElementById('time-display').innerText = `${m}:${s.toString().padStart(2,'0')}`;
 
-            let currentIndex = -1;
-            for(let i = 0; i < timelineData.length; i++) {
-                if(combatTime >= timelineData[i].sec) currentIndex = i; else break;
+            let current = null;
+            for(let item of timelineData) {
+                if(combatTime >= item.sec) current = item; else break;
             }
 
-            if(currentIndex !== -1) {
-                const cur = timelineData[currentIndex];
-                document.getElementById('phase-display').innerText = `PHASE: ${cur.phase || '---'}`;
-                document.getElementById('gimmick-display').innerText = cur.gimmick || '---';
-                if(currentIndex + 1 < timelineData.length) {
-                    document.getElementById('next-time-display').innerText = timelineData[currentIndex+1].timeStr;
-                    document.getElementById('next-gimmick-display').innerText = timelineData[currentIndex+1].gimmick;
-                }
+            if(current) {
+                document.getElementById('phase-display').innerText = `PHASE: ${current.phase || '---'}`;
+                const gDisp = document.getElementById('gimmick-display');
+                gDisp.innerText = current.gimmick || '---';
+                // スイッチが含まれる場合は黄色
+                gDisp.className = current.gimmick.includes("スイッチ") ? "switch-text" : "";
+
+                // スキルアイコン表示
+                const container = document.getElementById('job-skills-container');
+                container.innerHTML = "";
+                current.skills.forEach(sk => {
+                    const div = document.createElement('div');
+                    div.className = 'skill-badge';
+                    div.innerHTML = `
+                        <span class="job-name">${sk.job}</span>
+                        ${sk.icon ? `<img src="${sk.icon}" class="skill-icon">` : ''}
+                    `;
+                    container.appendChild(div);
+                });
             }
 
-            // 未来予測の更新
-            [30, 60, 90, 120].forEach(offset => {
-                const targetTime = combatTime + offset;
-                let found = timelineData.filter(item => item.sec <= targetTime).pop();
-                document.getElementById('f' + offset).innerText = found ? found.gimmick : "---";
+            // 未来予測
+            [30, 60, 90, 120].forEach(off => {
+                const target = combatTime + off;
+                let found = timelineData.filter(item => item.sec <= target).pop();
+                document.getElementById('f' + off).innerText = found ? found.gimmick : "---";
             });
         }, 300);
     }

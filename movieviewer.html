@@ -2,57 +2,65 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>究極の攻略同期ツール</title>
+    <title>FF14/Raid Timeline Sync Tool</title>
     <style>
-        body { display: flex; flex-direction: column; height: 100vh; margin: 0; font-family: sans-serif; background: #1a1a1a; color: #fff; overflow: hidden; }
+        body { display: flex; flex-direction: column; height: 100vh; margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background: #121212; color: #e0e0e0; overflow: hidden; }
         
-        /* 上部：コントロールエリア */
-        #header { height: 120px; padding: 10px; background: #333; display: flex; gap: 20px; border-bottom: 2px solid #444; }
-        .input-group { display: flex; flex-direction: column; gap: 5px; }
-        input { padding: 5px; border-radius: 4px; border: none; width: 250px; }
-        button { cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; padding: 5px 10px; }
-        button:hover { background: #0056b3; }
+        /* ヘッダー設定エリア */
+        #header { padding: 15px; background: #1f1f1f; display: flex; gap: 15px; border-bottom: 2px solid #333; align-items: flex-end; flex-wrap: wrap; }
+        .input-group { display: flex; flex-direction: column; gap: 4px; }
+        label { font-size: 11px; color: #aaa; font-weight: bold; }
+        input { padding: 8px; border-radius: 4px; border: 1px solid #444; background: #2a2a2a; color: #fff; width: 220px; }
+        button { cursor: pointer; background: #388e3c; color: white; border: none; border-radius: 4px; padding: 8px 15px; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #45a049; }
 
-        /* メイン：動画とシートの分割 */
+        /* メイン：動画とシート */
         #main-container { display: flex; flex: 1; overflow: hidden; }
-        #video-section { flex: 1; background: #000; position: relative; }
-        #sheet-section { width: 50%; border-left: 2px solid #444; background: #fff; }
+        #video-section { flex: 1.2; background: #000; position: relative; display: flex; flex-direction: column; }
+        #sheet-section { flex: 0.8; border-left: 2px solid #333; background: #fff; }
         iframe { width: 100%; height: 100%; border: none; }
 
-        /* ギミック通知（オーバーレイ） */
-        #gimmick-display {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            background: rgba(0, 0, 0, 0.8); color: #ffeb3b;
-            padding: 15px; font-size: 24px; font-weight: bold; text-align: center;
-            border-top: 2px solid #ffeb3b; pointer-events: none;
+        /* 同期表示（オーバーレイ） */
+        #sync-overlay {
+            background: rgba(0, 0, 0, 0.85);
+            padding: 20px;
+            border-top: 3px solid #388e3c;
         }
+        .phase-text { color: #81c784; font-size: 18px; margin-bottom: 5px; }
+        .gimmick-text { color: #fff; font-size: 32px; font-weight: bold; }
+        .time-text { color: #ffeb3b; font-family: monospace; font-size: 24px; margin-right: 15px; }
+        
+        #current-info { display: flex; align-items: center; }
     </style>
 </head>
 <body>
 
 <div id="header">
     <div class="input-group">
-        <label>1. スプレッドシートの「ウェブ公開URL」</label>
-        <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/e/..." value="">
-        <button onclick="updateSheet()">シートを反映</button>
+        <label>1. シート「ウェブに公開」URL</label>
+        <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/e/.../pubhtml" value="">
     </div>
     <div class="input-group">
         <label>2. YouTube 動画ID</label>
         <input type="text" id="videoId" placeholder="例: dQw4w9WgXcQ" value="">
-        <button onclick="updateVideo()">動画を読み込む</button>
     </div>
     <div class="input-group">
-        <label>3. 戦闘開始時間 (動画内)</label>
+        <label>3. 戦闘開始(動画の何分何秒？)</label>
         <input type="text" id="startTimeInput" placeholder="12:34" value="0:00">
-        <button onclick="setOffset()" style="background: #28a745;">同期スタート</button>
-        <div id="status" style="font-size: 12px; color: #aaa;"></div>
     </div>
+    <button onclick="initializeAll()">ツールを起動・同期</button>
 </div>
 
 <div id="main-container">
     <div id="video-section">
-        <div id="player"></div>
-        <div id="gimmick-display">待機中...</div>
+        <div id="player" style="flex:1;"></div>
+        <div id="sync-overlay">
+            <div id="phase-display" class="phase-text">フェーズ: 待機中</div>
+            <div id="current-info">
+                <span id="time-display" class="time-text">00:00</span>
+                <span id="gimmick-display" class="gimmick-text">同期ボタンを押してください</span>
+            </div>
+        </div>
     </div>
     <div id="sheet-section">
         <iframe id="sheetFrame" src="about:blank"></iframe>
@@ -60,76 +68,101 @@
 </div>
 
 <script>
-    // YouTube API
     var tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     document.head.appendChild(tag);
 
     var player, offsetSeconds = 0, timerInterval;
-    var gimmickData = []; // 同期用のバックグラウンドデータ
+    var timeline = []; 
 
     function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
             height: '100%', width: '100%', videoId: '',
-            events: { 'onStateChange': (e) => { if(e.data == 1) startSync(); else stopSync(); } }
+            events: { 'onStateChange': onPlayerStateChange }
         });
     }
 
-    function updateVideo() {
-        const id = document.getElementById('videoId').value.trim();
-        if(id) player.loadVideoById(id);
+    function onPlayerStateChange(event) {
+        if (event.data == YT.PlayerState.PLAYING) startSync();
+        else stopSync();
     }
 
-    function updateSheet() {
-        const url = document.getElementById('sheetUrl').value.trim();
-        if(url) {
-            document.getElementById('sheetFrame').src = url;
-            // 同期用にCSVデータを裏側で取得
-            fetchCSV(url);
-        }
-    }
+    async function initializeAll() {
+        const sUrl = document.getElementById('sheetUrl').value.trim();
+        const vId = document.getElementById('videoId').value.trim();
+        const sTime = document.getElementById('startTimeInput').value.trim();
 
-    async function fetchCSV(pubUrl) {
-        // pubhtml URLからCSV用のURLに変換してデータを取得
-        const csvUrl = pubUrl.replace(/\/pubhtml.*/, "/pub?output=csv");
+        if(!sUrl || !vId) return alert("シートURLと動画IDを入力してください");
+
+        // シートの表示
+        document.getElementById('sheetFrame').src = sUrl;
+        
+        // 動画の読み込み
+        player.loadVideoById(vId);
+
+        // 戦闘開始オフセットの設定
+        offsetSeconds = timeToSec(sTime);
+
+        // 裏側でCSVとしてデータを読み込み
+        const csvUrl = sUrl.replace(/\/pubhtml.*/, "/pub?output=csv");
         try {
             const res = await fetch(csvUrl);
             const text = await res.text();
-            parseGimmicks(text);
-        } catch (e) { console.error("CSV sync failed"); }
+            parseTimeline(text);
+        } catch (e) { alert("データの同期に失敗しました。ウェブ公開設定を確認してください。"); }
     }
 
-    function parseGimmicks(text) {
-        gimmickData = [];
-        const rows = text.split('\n');
+    function parseTimeline(csvText) {
+        timeline = [];
+        const rows = csvText.replace(/\r/g, "").split('\n');
         rows.forEach(row => {
             const cols = row.split(',');
             if(cols.length >= 5) {
-                const sec = timeToSec(cols[3]); // D列
-                if(sec !== null) gimmickData.push({ sec: sec, text: cols.slice(4).join(' ') });
+                const phase = cols[2]; // C列
+                const timeStr = cols[3]; // D列
+                const gimmick = cols[4]; // E列
+                const sec = timeToSec(timeStr);
+                if(sec !== null) {
+                    timeline.push({ sec: sec, phase: phase, gimmick: gimmick });
+                }
             }
         });
+        // 時間順にソート
+        timeline.sort((a, b) => a.sec - b.sec);
     }
 
     function timeToSec(str) {
+        if(!str) return null;
         const p = str.trim().split(':').map(Number);
+        if(p.some(isNaN)) return null;
         return p.length === 2 ? p[0]*60 + p[1] : p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : null;
     }
 
-    function setOffset() {
-        offsetSeconds = timeToSec(document.getElementById('startTimeInput').value) || 0;
-        document.getElementById('status').innerText = "戦闘開始設定: " + document.getElementById('startTimeInput').value;
+    function startSync() {
+        if(timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            const videoTime = player.getCurrentTime();
+            const combatTime = Math.max(0, videoTime - offsetSeconds); // 戦闘開始を0とした時間
+
+            // 秒数を 00:00 形式に変換
+            const m = Math.floor(combatTime / 60);
+            const s = Math.floor(combatTime % 60);
+            document.getElementById('time-display').innerText = `${m}:${s.toString().padStart(2,'0')}`;
+
+            // 現在の戦闘時間に対応する行を探す
+            let current = null;
+            for(let item of timeline) {
+                if(combatTime >= item.sec) current = item;
+                else break;
+            }
+
+            if(current) {
+                document.getElementById('phase-display').innerText = `PHASE: ${current.phase || '---'}`;
+                document.getElementById('gimmick-display').innerText = current.gimmick || '---';
+            }
+        }, 300);
     }
 
-    function startSync() {
-        timerInterval = setInterval(() => {
-            const time = player.getCurrentTime() - offsetSeconds;
-            let current = gimmickData.filter(g => time >= g.sec).pop();
-            if(current) {
-                document.getElementById('gimmick-display').innerText = `【${Math.floor(time/60)}:${(time%60).toString().padStart(2,'0')}】${current.text}`;
-            }
-        }, 500);
-    }
     function stopSync() { clearInterval(timerInterval); }
 </script>
 </body>

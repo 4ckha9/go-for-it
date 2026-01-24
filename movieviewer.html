@@ -2,196 +2,135 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>動画×シート同期ツール</title>
+    <title>究極の攻略同期ツール</title>
     <style>
-        body { display: flex; height: 100vh; margin: 0; font-family: sans-serif; background: #222; color: #fff; }
-        #video-container { flex: 1; display: flex; flex-direction: column; padding: 10px; }
-        #sheet-container { width: 400px; padding: 10px; overflow-y: auto; background: #333; border-left: 1px solid #555; }
-        .controls { margin-bottom: 10px; background: #444; padding: 10px; border-radius: 5px; }
-        input { padding: 5px; margin-right: 5px; background: #eee; border: none; }
-        button { padding: 5px 10px; cursor: pointer; background: #4CAF50; color: white; border: none; }
-        label { margin-right: 10px; font-size: 0.9em; display:inline-block; width: 160px;}
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        th, td { padding: 8px; border-bottom: 1px solid #555; text-align: left; }
-        th { background: #222; position: sticky; top: 0; }
-        .active-row { background-color: #d32f2f; color: white; font-weight: bold; font-size: 1.1em; }
+        body { display: flex; flex-direction: column; height: 100vh; margin: 0; font-family: sans-serif; background: #1a1a1a; color: #fff; overflow: hidden; }
+        
+        /* 上部：コントロールエリア */
+        #header { height: 120px; padding: 10px; background: #333; display: flex; gap: 20px; border-bottom: 2px solid #444; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        input { padding: 5px; border-radius: 4px; border: none; width: 250px; }
+        button { cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; padding: 5px 10px; }
+        button:hover { background: #0056b3; }
+
+        /* メイン：動画とシートの分割 */
+        #main-container { display: flex; flex: 1; overflow: hidden; }
+        #video-section { flex: 1; background: #000; position: relative; }
+        #sheet-section { width: 50%; border-left: 2px solid #444; background: #fff; }
+        iframe { width: 100%; height: 100%; border: none; }
+
+        /* ギミック通知（オーバーレイ） */
+        #gimmick-display {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: rgba(0, 0, 0, 0.8); color: #ffeb3b;
+            padding: 15px; font-size: 24px; font-weight: bold; text-align: center;
+            border-top: 2px solid #ffeb3b; pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
-    <div id="video-container">
-        <div class="controls">
-            <div style="margin-bottom:5px;">
-                <label>1. CSV URL:</label>
-                <input type="text" id="csvUrl" value="https://docs.google.com/spreadsheets/d/1-0i9CygY8_z-mWk1JxufTfs6ktPUBc3UXwBck9LChPU/export?format=csv&gid=1545460920" style="width: 300px;">
-                <button onclick="loadSheet()">リスト読込</button>
-            </div>
-            <div style="margin-bottom:5px;">
-                <label>2. YouTube ID:</label>
-                <input type="text" id="videoId" placeholder="例: dQw4w9WgXcQ" style="width: 150px;">
-                <button onclick="loadVideo()">動画変更</button>
-            </div>
-            <div>
-                <label>3. 戦闘開始(動画内):</label>
-                <input type="text" id="startTimeInput" placeholder="例 12:34" value="0:00" style="width: 80px;">
-                <button onclick="setOffset()">設定</button>
-                <span id="status-text" style="margin-left:10px; color: yellow; font-size:0.8em;"></span>
-            </div>
-        </div>
+<div id="header">
+    <div class="input-group">
+        <label>1. スプレッドシートの「ウェブ公開URL」</label>
+        <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/e/..." value="">
+        <button onclick="updateSheet()">シートを反映</button>
+    </div>
+    <div class="input-group">
+        <label>2. YouTube 動画ID</label>
+        <input type="text" id="videoId" placeholder="例: dQw4w9WgXcQ" value="">
+        <button onclick="updateVideo()">動画を読み込む</button>
+    </div>
+    <div class="input-group">
+        <label>3. 戦闘開始時間 (動画内)</label>
+        <input type="text" id="startTimeInput" placeholder="12:34" value="0:00">
+        <button onclick="setOffset()" style="background: #28a745;">同期スタート</button>
+        <div id="status" style="font-size: 12px; color: #aaa;"></div>
+    </div>
+</div>
+
+<div id="main-container">
+    <div id="video-section">
         <div id="player"></div>
+        <div id="gimmick-display">待機中...</div>
     </div>
-
-    <div id="sheet-container">
-        <table id="guideTable">
-            <thead>
-                <tr>
-                    <th style="width:60px;">時間</th>
-                    <th>内容</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+    <div id="sheet-section">
+        <iframe id="sheetFrame" src="about:blank"></iframe>
     </div>
+</div>
 
-    <script>
-        var tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        var firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+<script>
+    // YouTube API
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
 
-        var player;
-        var offsetSeconds = 0;
-        var sheetData = [];
-        var timerInterval;
+    var player, offsetSeconds = 0, timerInterval;
+    var gimmickData = []; // 同期用のバックグラウンドデータ
 
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('player', {
-                height: '100%',
-                width: '100%',
-                videoId: '', // 初期値なし
-                events: { 'onStateChange': onPlayerStateChange }
-            });
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            height: '100%', width: '100%', videoId: '',
+            events: { 'onStateChange': (e) => { if(e.data == 1) startSync(); else stopSync(); } }
+        });
+    }
+
+    function updateVideo() {
+        const id = document.getElementById('videoId').value.trim();
+        if(id) player.loadVideoById(id);
+    }
+
+    function updateSheet() {
+        const url = document.getElementById('sheetUrl').value.trim();
+        if(url) {
+            document.getElementById('sheetFrame').src = url;
+            // 同期用にCSVデータを裏側で取得
+            fetchCSV(url);
         }
+    }
 
-        function onPlayerStateChange(event) {
-            if (event.data == YT.PlayerState.PLAYING) {
-                startSyncLoop();
-            } else {
-                stopSyncLoop();
+    async function fetchCSV(pubUrl) {
+        // pubhtml URLからCSV用のURLに変換してデータを取得
+        const csvUrl = pubUrl.replace(/\/pubhtml.*/, "/pub?output=csv");
+        try {
+            const res = await fetch(csvUrl);
+            const text = await res.text();
+            parseGimmicks(text);
+        } catch (e) { console.error("CSV sync failed"); }
+    }
+
+    function parseGimmicks(text) {
+        gimmickData = [];
+        const rows = text.split('\n');
+        rows.forEach(row => {
+            const cols = row.split(',');
+            if(cols.length >= 5) {
+                const sec = timeToSec(cols[3]); // D列
+                if(sec !== null) gimmickData.push({ sec: sec, text: cols.slice(4).join(' ') });
             }
-        }
+        });
+    }
 
-        function loadVideo() {
-            const vid = document.getElementById('videoId').value.trim();
-            if(vid && player && player.loadVideoById) {
-                player.loadVideoById(vid);
-            } else {
-                alert("YouTubeプレイヤーの準備ができていません。少し待ってから押してください。");
+    function timeToSec(str) {
+        const p = str.trim().split(':').map(Number);
+        return p.length === 2 ? p[0]*60 + p[1] : p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : null;
+    }
+
+    function setOffset() {
+        offsetSeconds = timeToSec(document.getElementById('startTimeInput').value) || 0;
+        document.getElementById('status').innerText = "戦闘開始設定: " + document.getElementById('startTimeInput').value;
+    }
+
+    function startSync() {
+        timerInterval = setInterval(() => {
+            const time = player.getCurrentTime() - offsetSeconds;
+            let current = gimmickData.filter(g => time >= g.sec).pop();
+            if(current) {
+                document.getElementById('gimmick-display').innerText = `【${Math.floor(time/60)}:${(time%60).toString().padStart(2,'0')}】${current.text}`;
             }
-        }
-
-        async function loadSheet() {
-            const url = document.getElementById('csvUrl').value.trim();
-            if(!url) return alert("URLを入力してください");
-            
-            try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error("Network response was not ok");
-                const text = await response.text();
-                parseCSV(text);
-                alert("読み込み成功！");
-            } catch (e) {
-                console.error(e);
-                alert("読み込み失敗。\n・スプレッドシートの「ファイル > 共有 > ウェブに公開」がされているか確認してください。\n・CodePenなどのWeb上で実行してください。");
-            }
-        }
-
-        function parseCSV(csvText) {
-            // 改行コードの揺らぎに対応
-            const rows = csvText.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split('\n');
-            const tbody = document.querySelector('#guideTable tbody');
-            tbody.innerHTML = '';
-            sheetData = [];
-
-            rows.forEach((row, index) => {
-                // CSVのカンマ区切り処理（簡易版）
-                const cols = row.split(',');
-                if (cols.length < 4) return; // 列が足りない行は無視
-
-                const timeStr = cols[3].trim(); // D列(インデックス3)
-                const seconds = timeStringToSeconds(timeStr);
-                
-                // 表示用（E列以降を結合）
-                let contentText = cols.slice(4).join(' ').replace(/"/g, '');
-                
-                // 時間が空、または「時間」というヘッダー文字の場合はスキップ
-                if (timeStr === "" || timeStr === "時間" || seconds === null) return;
-
-                const tr = document.createElement('tr');
-                tr.id = `row-${index}`;
-                tr.innerHTML = `<td>${timeStr}</td><td>${contentText}</td>`;
-                tbody.appendChild(tr);
-
-                sheetData.push({ timeSec: seconds, rowIndex: index });
-            });
-        }
-
-        function timeStringToSeconds(str) {
-            if(!str) return null;
-            // 全角数字などの対策等はしていないため半角推奨
-            const parts = str.split(':').map(Number);
-            if (parts.some(isNaN)) return null;
-            
-            if (parts.length === 2) return parts[0] * 60 + parts[1];
-            if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-            return null;
-        }
-
-        function setOffset() {
-            const input = document.getElementById('startTimeInput').value;
-            const sec = timeStringToSeconds(input);
-            if (sec !== null) {
-                offsetSeconds = sec;
-                document.getElementById('status-text').innerText = `開始点: ${input}`;
-            } else {
-                alert("時間の形式が正しくありません (例: 1:30)");
-            }
-        }
-
-        function startSyncLoop() {
-            if(timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if(!player || !player.getCurrentTime) return;
-                const currentTime = player.getCurrentTime();
-                const combatTime = currentTime - offsetSeconds;
-                highlightRow(combatTime);
-            }, 500);
-        }
-
-        function stopSyncLoop() {
-            if(timerInterval) clearInterval(timerInterval);
-        }
-
-        function highlightRow(combatTime) {
-            let activeRowIndex = -1;
-            // 現在時刻を過ぎた直近の行を探す
-            for (let i = 0; i < sheetData.length; i++) {
-                if (combatTime >= sheetData[i].timeSec) {
-                    activeRowIndex = sheetData[i].rowIndex;
-                } else {
-                    break; 
-                }
-            }
-
-            document.querySelectorAll('tr').forEach(tr => tr.classList.remove('active-row'));
-            if (activeRowIndex !== -1) {
-                const targetTr = document.getElementById(`row-${activeRowIndex}`);
-                if (targetTr) {
-                    targetTr.classList.add('active-row');
-                    targetTr.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }
-        }
-    </script>
+        }, 500);
+    }
+    function stopSync() { clearInterval(timerInterval); }
+</script>
 </body>
 </html>

@@ -2,77 +2,135 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Go For It - ゲームコミュニティ</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>究極の攻略同期ツール</title>
+    <style>
+        body { display: flex; flex-direction: column; height: 100vh; margin: 0; font-family: sans-serif; background: #1a1a1a; color: #fff; overflow: hidden; }
+        
+        /* 上部：コントロールエリア */
+        #header { height: 120px; padding: 10px; background: #333; display: flex; gap: 20px; border-bottom: 2px solid #444; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        input { padding: 5px; border-radius: 4px; border: none; width: 250px; }
+        button { cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; padding: 5px 10px; }
+        button:hover { background: #0056b3; }
+
+        /* メイン：動画とシートの分割 */
+        #main-container { display: flex; flex: 1; overflow: hidden; }
+        #video-section { flex: 1; background: #000; position: relative; }
+        #sheet-section { width: 50%; border-left: 2px solid #444; background: #fff; }
+        iframe { width: 100%; height: 100%; border: none; }
+
+        /* ギミック通知（オーバーレイ） */
+        #gimmick-display {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: rgba(0, 0, 0, 0.8); color: #ffeb3b;
+            padding: 15px; font-size: 24px; font-weight: bold; text-align: center;
+            border-top: 2px solid #ffeb3b; pointer-events: none;
+        }
+    </style>
 </head>
 <body>
-    <header class="header">
-        <nav class="nav">
-            <div class="logo">Go For It</div>
-            <ul class="nav-links">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="blog.html">活動記録</a></li>
-                <li><a href="screenshots.html">SS</a></li>
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
 
-    <section class="hero">
-        <div class="hero-content">
-            <h1>Go For It</h1>
-            <p>ゲームを楽しむコミュニティ</p>
-        </div>
-    </section>
+<div id="header">
+    <div class="input-group">
+        <label>1. スプレッドシートの「ウェブ公開URL」</label>
+        <input type="text" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/e/..." value="">
+        <button onclick="updateSheet()">シートを反映</button>
+    </div>
+    <div class="input-group">
+        <label>2. YouTube 動画ID</label>
+        <input type="text" id="videoId" placeholder="例: dQw4w9WgXcQ" value="">
+        <button onclick="updateVideo()">動画を読み込む</button>
+    </div>
+    <div class="input-group">
+        <label>3. 戦闘開始時間 (動画内)</label>
+        <input type="text" id="startTimeInput" placeholder="12:34" value="0:00">
+        <button onclick="setOffset()" style="background: #28a745;">同期スタート</button>
+        <div id="status" style="font-size: 12px; color: #aaa;"></div>
+    </div>
+</div>
 
-    <section id="about" class="section">
-        <h2 class="section-title">About</h2>
-        <div class="about-content">
-            このコミュニティはFF14を中心としたゲームをカジュアル～ハードに楽しむコミュニティです
-        </div>
-    </section>
+<div id="main-container">
+    <div id="video-section">
+        <div id="player"></div>
+        <div id="gimmick-display">待機中...</div>
+    </div>
+    <div id="sheet-section">
+        <iframe id="sheetFrame" src="about:blank"></iframe>
+    </div>
+</div>
 
-    <section id="master" class="section">
-        <h2 class="section-title">Master</h2>
-        <div class="master-card">
-            <div class="master-avatar">🎮</div>
-            <div class="master-info">
-                <h3>Anselm Hart</h3>
-                <p>FF14とRPG、パズル、FPS、謎解き、シミュレーションが好き</p>
-                <div class="master-interests">
-                    <span class="interest-tag">FF14</span>
-                    <span class="interest-tag">RPG</span>
-                    <span class="interest-tag">パズル</span>
-                    <span class="interest-tag">FPS</span>
-                    <span class="interest-tag">謎解き</span>
-                    <span class="interest-tag">シミュレーション</span>
-                </div>
-            </div>
-        </div>
-    </section>
+<script>
+    // YouTube API
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
 
-    <section id="games" class="section">
-        <h2 class="section-title">遊んだゲーム</h2>
-        <div class="games-grid" id="gamesGrid"></div>
-    </section>
+    var player, offsetSeconds = 0, timerInterval;
+    var gimmickData = []; // 同期用のバックグラウンドデータ
 
-    <section id="contact" class="section">
-        <h2 class="section-title">Contact</h2>
-        <div class="contact-grid">
-            <div class="contact-card">
-                <div class="contact-icon">𝕏</div>
-                <h3>X (Twitter)</h3>
-                <a href="https://x.com/anselm_hart" class="contact-link" target="_blank">@anselm_hart</a>
-            </div>
-            <div class="contact-card">
-                <div class="contact-icon">💬</div>
-                <h3>Discord</h3>
-                <a href="" class="contact-link" target="_blank">Discord: anselmhart</a>
-            </div>
-        </div>
-    </section>
+    function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+            height: '100%', width: '100%', videoId: '',
+            events: { 'onStateChange': (e) => { if(e.data == 1) startSync(); else stopSync(); } }
+        });
+    }
 
-    <script src="main.js"></script>
+    function updateVideo() {
+        const id = document.getElementById('videoId').value.trim();
+        if(id) player.loadVideoById(id);
+    }
+
+    function updateSheet() {
+        const url = document.getElementById('sheetUrl').value.trim();
+        if(url) {
+            document.getElementById('sheetFrame').src = url;
+            // 同期用にCSVデータを裏側で取得
+            fetchCSV(url);
+        }
+    }
+
+    async function fetchCSV(pubUrl) {
+        // pubhtml URLからCSV用のURLに変換してデータを取得
+        const csvUrl = pubUrl.replace(/\/pubhtml.*/, "/pub?output=csv");
+        try {
+            const res = await fetch(csvUrl);
+            const text = await res.text();
+            parseGimmicks(text);
+        } catch (e) { console.error("CSV sync failed"); }
+    }
+
+    function parseGimmicks(text) {
+        gimmickData = [];
+        const rows = text.split('\n');
+        rows.forEach(row => {
+            const cols = row.split(',');
+            if(cols.length >= 5) {
+                const sec = timeToSec(cols[3]); // D列
+                if(sec !== null) gimmickData.push({ sec: sec, text: cols.slice(4).join(' ') });
+            }
+        });
+    }
+
+    function timeToSec(str) {
+        const p = str.trim().split(':').map(Number);
+        return p.length === 2 ? p[0]*60 + p[1] : p.length === 3 ? p[0]*3600 + p[1]*60 + p[2] : null;
+    }
+
+    function setOffset() {
+        offsetSeconds = timeToSec(document.getElementById('startTimeInput').value) || 0;
+        document.getElementById('status').innerText = "戦闘開始設定: " + document.getElementById('startTimeInput').value;
+    }
+
+    function startSync() {
+        timerInterval = setInterval(() => {
+            const time = player.getCurrentTime() - offsetSeconds;
+            let current = gimmickData.filter(g => time >= g.sec).pop();
+            if(current) {
+                document.getElementById('gimmick-display').innerText = `【${Math.floor(time/60)}:${(time%60).toString().padStart(2,'0')}】${current.text}`;
+            }
+        }, 500);
+    }
+    function stopSync() { clearInterval(timerInterval); }
+</script>
 </body>
 </html>

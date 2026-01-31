@@ -2,13 +2,12 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Marine Design Node - Pro Edition</title>
+    <title>MDmemo</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6557224818632411"
-     crossorigin="anonymous"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6557224818632411" crossorigin="anonymous"></script>
     <style>
         :root { --header-h: 45px; --side-w: 220px; --ai-h: 300px; --accent: #e67e22; }
         body, html { height: 100vh; width: 100vw; margin: 0; font-family: sans-serif; overflow: hidden; background: #1a1a1a; color: #eee; }
@@ -16,12 +15,16 @@
         .wrapper { display: grid; grid-template-columns: var(--side-w) 1fr 1fr; grid-template-rows: var(--header-h) 1fr var(--ai-h); height: 100vh; }
         header { grid-column: 1 / 4; background: #2c3e50; display: flex; align-items: center; padding: 0 15px; gap: 8px; border-bottom: 1px solid #444; z-index: 100; }
         
-        /* サイドバー構造の最適化 */
         aside { grid-row: 2 / 4; background: #252526; border-right: 1px solid #444; display: flex; flex-direction: column; min-height: 0; }
-        .search-box { padding: 10px; background: #333; border-bottom: 1px solid #444; flex-shrink: 0; }
-        #search-input { width: 100%; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 6px; border-radius: 3px; font-size: 12px; box-sizing: border-box; }
+        
+        /* 検索と削除のエリア */
+        .search-area { padding: 10px; background: #333; border-bottom: 1px solid #444; flex-shrink: 0; display: flex; gap: 5px; }
+        #search-input { flex: 1; background: #1e1e1e; border: 1px solid #555; color: #fff; padding: 6px; border-radius: 3px; font-size: 12px; }
+        .del-btn { background: #c0392b; color: white; border: none; padding: 0 8px; border-radius: 3px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .del-btn:hover { background: #e74c3c; }
+
         #note-list { list-style: none; padding: 0; margin: 0; overflow-y: auto; flex: 1; }
-        #note-list li { padding: 12px; border-bottom: 1px solid #333; cursor: pointer; font-size: 12px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #note-list li { padding: 12px; border-bottom: 1px solid #333; cursor: pointer; font-size: 12px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 4px solid transparent; }
         #note-list li:hover { background: #2a2d2e; }
         #note-list li.active { background: #37373d; border-left: 4px solid var(--accent); color: #fff; }
 
@@ -30,7 +33,7 @@
         
         textarea { flex: 1; background: #1e1e1e; color: #d4d4d4; border: none; padding: 15px; font-family: monospace; font-size: 14px; outline: none; resize: none; line-height: 1.6; }
         #preview { flex: 1; padding: 25px; overflow-y: auto; background: #fff; color: #333; }
-        #preview img { max-width: 100%; height: auto; border: 1px solid #ddd; margin: 10px 0; }
+        #preview img { max-width: 100%; height: auto; border: 1px solid #ddd; margin: 10px 0; border-radius: 4px; }
 
         footer { grid-column: 2 / 4; display: grid; grid-template-columns: 1fr 340px; background: #252526; border-top: 2px solid #444; overflow: hidden; min-height: 0; }
         
@@ -64,8 +67,9 @@
     </header>
 
     <aside id="sidebar">
-        <div class="search-box">
-            <input type="text" id="search-input" placeholder="ノートを検索..." oninput="renderList()">
+        <div class="search-area">
+            <input type="text" id="search-input" placeholder="検索..." oninput="renderList()">
+            <button class="del-btn" title="現在のノートを削除" onclick="deleteCurrentNote()">🗑️</button>
         </div>
         <ul id="note-list"></ul>
     </aside>
@@ -82,7 +86,7 @@
 
     <footer>
         <div class="ai-box">
-            <div class="pane-header">AI ASSISTANT <button id="apply-btn" style="display:none; height:18px; padding:0 8px; font-size:10px; background:#27ae60;" onclick="applyToNote()">ノートに追記</button></div>
+            <div class="pane-header">AI ASSISTANT <button id="apply-btn" style="display:none; height:18px; padding:0 8px; font-size:10px; background:#27ae60;" onclick="applyToNote()">追記</button></div>
             <div id="ai-output"></div>
             <div class="input-group">
                 <input type="text" id="ai-input" placeholder="設計の相談..." onkeypress="if(event.key==='Enter') askAI()">
@@ -103,7 +107,7 @@
                 </div>
                 <div style="margin-top:10px; font-size:10px; color:#888; width:300px; line-height:1.4;">
                     <strong>MDmemo</strong><br>
-                    Markdown & KaTeX & DB保存対応。
+                    画像分離保存・一括インポート機能・KaTeX搭載。
                 </div>
             </div>
         </div>
@@ -135,7 +139,13 @@
 
     function toggleSidebar() { document.getElementById('main-layout').classList.toggle('hide-sidebar'); }
     function toggleReader() { document.getElementById('main-layout').classList.toggle('reader-mode'); }
-    function showNote() { const n = notes.find(x => x.id === currentNoteId); if (n) { editor.value = n.content; updatePreview(); } }
+    
+    function showNote() {
+        const n = notes.find(x => x.id === currentNoteId);
+        if (n) { editor.value = n.content; updatePreview(); }
+        else { editor.value = ""; preview.innerHTML = ""; }
+        renderList();
+    }
 
     let debounceTimer;
     function debouncedUpdate() { clearTimeout(debounceTimer); debounceTimer = setTimeout(updatePreview, 300); }
@@ -160,21 +170,17 @@
             n.content = editor.value; 
             n.title = n.content.split('\n')[0].replace(/[#*`]/g,'').trim() || "無題";
             saveToDB("notes", n); 
-            renderList(); 
         }
     }
 
     function getFromDB(s, id) { return new Promise(res => { const r = db.transaction(s).objectStore(s).get(id); r.onsuccess = () => res(r.result); }); }
     function saveToDB(s, obj) { db.transaction(s, "readwrite").objectStore(s).put(obj); }
 
-    // 検索機能付きリスト描画
     function renderList() {
         const query = document.getElementById('search-input').value.toLowerCase();
         const l = document.getElementById('note-list'); 
         l.innerHTML = '';
-        
         const filtered = notes.filter(n => n.title.toLowerCase().includes(query) || n.content.toLowerCase().includes(query));
-        
         filtered.forEach(n => {
             const li = document.createElement('li');
             li.className = (n.id === currentNoteId ? 'active' : '');
@@ -189,7 +195,27 @@
         notes.unshift(n); currentNoteId = n.id; saveToDB("notes", n); showNote();
     }
 
-    // 一括インポート
+    // ノート削除機能
+    function deleteCurrentNote() {
+        if (!currentNoteId) return;
+        const n = notes.find(x => x.id === currentNoteId);
+        if (!confirm(`「${n.title}」を削除しますか？`)) return;
+
+        const tx = db.transaction("notes", "readwrite");
+        tx.objectStore("notes").delete(currentNoteId);
+        
+        tx.oncomplete = () => {
+            notes = notes.filter(x => x.id !== currentNoteId);
+            if (notes.length > 0) {
+                currentNoteId = notes[0].id;
+            } else {
+                currentNoteId = null;
+                createNewNote("初期ノート", "# 船舶設計開始");
+            }
+            showNote();
+        };
+    }
+
     async function importMultipleNotes(input) {
         const files = Array.from(input.files);
         for (const file of files) {
@@ -203,7 +229,7 @@
             });
         }
         currentNoteId = notes[0].id;
-        showNote(); renderList();
+        showNote();
         input.value = "";
     }
 
@@ -223,7 +249,7 @@
         const input = document.getElementById('ai-input'), out = document.getElementById('ai-output');
         if(!input.value) return; out.innerText = "思考中...";
         try {
-            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview-001:generateContent?key=${API_KEY}`, {
+            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${API_KEY}`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ contents: [{ parts: [{ text: `船舶設計助手。ノート：\n${editor.value}\n質問：${input.value}` }] }] })
             });

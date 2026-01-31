@@ -2,80 +2,62 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>MDメモ</title>
+    <title>MDmemo</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6557224818632411" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6557224818632411"
+     crossorigin="anonymous"></script>
+
     <style>
-/* 広告エリア全体のコンテナ */
-.ads-box { 
-    display: flex; 
-    flex-direction: column; 
-    background: #252526; 
-    border-left: 1px solid #444;
-    min-width: 320px; /* 300pxの広告+余白 */
-}
-
-/* 広告を固定サイズで配置する中身 */
-.ads-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 10px;
-    overflow-y: auto;
-}
-
-/* 広告ユニットのサイズを強制固定 */
-.ads-fixed-frame {
-    width: 300px;
-    height: 250px;
-    background: #333; /* 読み込み前のプレースホルダー色 */
-    overflow: hidden;
-}
-
-/* ポリシー対策のガイドテキスト */
-.ads-notice {
-    font-size: 10px;
-    color: #666;
-    margin-bottom: 5px;
-    text-align: center;
-}
-        .tool-tips { margin-top: 15px; padding-top: 10px; border-top: 1px solid #444; color: #888; font-size: 11px; text-align: left; }
-        :root { --header-h: 45px; --side-w: 220px; --ai-h: 280px; --accent: #e67e22; }
+        :root { --header-h: 45px; --side-w: 220px; --ai-h: 300px; --accent: #e67e22; }
         body, html { height: 100vh; width: 100vw; margin: 0; font-family: sans-serif; overflow: hidden; background: #1a1a1a; color: #eee; }
+        
+        /* 全体レイアウト */
         .wrapper { display: grid; grid-template-columns: var(--side-w) 1fr 1fr; grid-template-rows: var(--header-h) 1fr var(--ai-h); height: 100vh; }
         header { grid-column: 1 / 4; background: #2c3e50; display: flex; align-items: center; padding: 0 15px; gap: 8px; border-bottom: 1px solid #444; z-index: 100; }
+        
+        /* サイドバー & パネル */
         aside { grid-row: 2 / 4; background: #252526; border-right: 1px solid #444; overflow-y: auto; display: flex; flex-direction: column; min-height: 0; }
         .pane { display: flex; flex-direction: column; border-right: 1px solid #444; background: #1e1e1e; min-height: 0; }
         .pane-header { background: #333; padding: 6px 12px; font-size: 11px; font-weight: bold; color: #aaa; display: flex; justify-content: space-between; flex-shrink: 0; }
+        
         textarea { flex: 1; background: #1e1e1e; color: #d4d4d4; border: none; padding: 15px; font-family: monospace; font-size: 14px; outline: none; resize: none; line-height: 1.6; }
-        #preview { flex: 1; padding: 25px; overflow-y: auto; background: #fff; color: #333; line-height: 1.7; }
-        #preview img { max-width: 100%; height: auto; border: 1px solid #ddd; margin: 10px 0; border-radius: 4px; }
-        footer { grid-column: 2 / 4; display: grid; grid-template-columns: 1fr 320px; background: #252526; border-top: 2px solid #444; overflow: hidden; min-height: 0; }
-        .ai-box { display: flex; flex-direction: column; border-right: 1px solid #444; min-height: 0; }
-        #ai-output { flex: 1; padding: 10px; overflow-y: auto; font-size: 13px; color: #ccc; }
-        .input-group { flex-shrink: 0; display: flex; padding: 10px; gap: 5px; background: #252526; border-top: 1px solid #333; }
-        .calc-box { padding: 0; background: #2d2d2d; overflow-y: auto; min-height: 0; }
-        .calc-section { padding: 10px; border-bottom: 1px solid #444; }
-        .calc-row { display: flex; align-items: center; gap: 5px; margin-bottom: 6px; font-size: 12px; }
-        .calc-input { width: 55px; background: #3c3c3c; border: 1px solid #555; color: #fff; padding: 3px; border-radius: 2px; text-align: right; }
-        .res-val { color: var(--accent); font-weight: bold; margin-left: auto; }
-        .copy-btn { background: #444; color: #bbb; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 10px; }
+        #preview { flex: 1; padding: 25px; overflow-y: auto; background: #fff; color: #333; }
+        #preview img { max-width: 100%; height: auto; border: 1px solid #ddd; margin: 10px 0; }
+
+        /* フッター：AIボックスと広告枠 */
+        footer { grid-column: 2 / 4; display: grid; grid-template-columns: 1fr 340px; background: #252526; border-top: 2px solid #444; overflow: hidden; min-height: 0; }
+        
+        /* AI ASSISTANT エリア */
+        .ai-box { display: flex; flex-direction: column; border-right: 1px solid #444; min-height: 0; position: relative; }
+        #ai-output { flex: 1; padding: 10px; overflow-y: auto; font-size: 13px; color: #ccc; background: #1e1e1e; }
+        .input-group { flex-shrink: 0; display: flex; padding: 10px; gap: 5px; background: #252526; border-top: 1px solid #333; height: 50px; box-sizing: border-box; }
+        .input-group input { flex: 1; background: #3c3c3c; border: 1px solid #555; color: white; padding: 5px 10px; border-radius: 3px; }
+
+        /* 広告枠固定エリア */
+        .ads-box { display: flex; flex-direction: column; background: #2d2d2d; min-height: 0; }
+        .ads-content { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 10px; overflow-y: auto; }
+        .ads-fixed-frame { width: 300px; height: 250px; background: #333; margin-top: 5px; flex-shrink: 0; }
+        .ads-notice { font-size: 9px; color: #666; margin-bottom: 2px; }
+
+        /* ボタン・リスト */
         #note-list { list-style: none; padding: 0; margin: 0; }
-        #note-list li { padding: 12px; border-bottom: 1px solid #333; cursor: pointer; font-size: 12px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #note-list li { padding: 12px; border-bottom: 1px solid #333; cursor: pointer; font-size: 12px; color: #aaa; }
         #note-list li.active { background: #37373d; border-left: 4px solid var(--accent); color: #fff; }
         button { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 3px; cursor: pointer; font-size: 12px; font-weight: bold; }
         .btn-sub { background: #555; }
         .btn-green { background: #27ae60; }
+        
+        /* レスポンシブ用 */
         .hide-sidebar { grid-template-columns: 0px 1fr 1fr !important; }
         .reader-mode { grid-template-columns: 0px 0px 1fr !important; grid-template-rows: var(--header-h) 1fr 0px !important; }
     </style>
+
 </head>
 <body>
+
 <div class="wrapper" id="main-layout">
     <header>
         <button class="btn-sub" onclick="toggleSidebar()">📁 フォルダ</button>
@@ -85,52 +67,56 @@
         <button class="btn-green" onclick="exportNote()">💾 保存(.md)</button>
         <input type="file" id="file-input" style="display:none;" accept=".md" onchange="importNote(this)">
     </header>
+
     <aside id="sidebar"><ul id="note-list"></ul></aside>
+
     <div class="pane">
-        <div class="pane-header">EDITOR (Paste images with Ctrl+V)</div>
+        <div class="pane-header">EDITOR</div>
         <textarea id="editor" spellcheck="false" oninput="debouncedUpdate()"></textarea>
     </div>
-    <div class="pane"><div class="pane-header">PREVIEW</div><div id="preview"></div></div>
-<footer>
-    <div class="ai-box">
-        <div class="pane-header">AI ASSISTANT <button id="apply-btn" style="display:none;" onclick="applyToNote()">追記</button></div>
-        <div id="ai-output"></div>
-        <div class="input-group">
-            <input type="text" id="ai-input" placeholder="設計相談...">
-            <button onclick="askAI()">送信</button>
-        </div>
-    </div>
-    
-<div class="ads-box">
-    <div class="pane-header">SPONSORED</div>
-    <div class="ads-content">
-        <div class="ads-notice">ADVERTISEMENT</div>
-        
-        <div class="ads-fixed-frame">
-            <ins class="adsbygoogle"
-                 style="display:inline-block;width:300px;height:250px"
-                 data-ad-client="ca-pub-6557224818632411"
-                 data-ad-slot="1240580693"></ins>
-            <script>
-                 (adsbygoogle = window.adsbygoogle || []).push({});
-            </script>
-        </div>
 
-        <div style="margin-top: 20px; font-size: 11px; color: #888; text-align: left; width: 300px;">
-            <strong>MDmemo</strong><br>
-            マークダウン対応のメモ帳。
-            IndexedDBによる画像分離保存、KaTeXによる数式表示に対応。
-        </div>
+    <div class="pane">
+        <div class="pane-header">PREVIEW</div>
+        <div id="preview"></div>
     </div>
-</div></footer></div>
+
+    <footer>
+        <div class="ai-box">
+            <div class="pane-header">AI ASSISTANT <button id="apply-btn" style="display:none; height:18px; padding:0 8px; font-size:10px; background:#27ae60;" onclick="applyToNote()">ノートに追記</button></div>
+            <div id="ai-output"></div>
+            <div class="input-group">
+                <input type="text" id="ai-input" placeholder="設計の相談や計算の確認..." onkeypress="if(event.key==='Enter') askAI()">
+                <button onclick="askAI()">送信</button>
+            </div>
+        </div>
+        
+        <div class="ads-box">
+            <div class="pane-header">SPONSORED</div>
+            <div class="ads-content">
+                <div class="ads-notice">ADVERTISEMENT</div>
+                <div class="ads-fixed-frame">
+                    <ins class="adsbygoogle"
+                         style="display:inline-block;width:300px;height:250px"
+                         data-ad-client="ca-pub-6557224818632411"
+                         data-ad-slot="1240580693"></ins>
+                    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                </div>
+                <div style="margin-top:10px; font-size:10px; color:#666; width:300px;">
+                    <strong>MDmemo</strong><br>
+                    マークダンメモツール。IndexedDBによる高速画像分離保存機能を搭載。
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
+
 <script>
-    const API_KEY = 'AIzaSyCOkouaJ_fWWBRbL76-k_V89IunGHFcv_M';
+    const API_KEY = 'AIzaSyCPq0wzFccDr5Tx_hcuFf_QWW0Nfz6rrfo';
     let db, notes = [], currentNoteId = null, lastAIResponse = "";
     const katexConfig = { delimiters: [{left: "$$", right: "$$", display: true}, {left: "$", right: "$", display: false}], throwOnError: false };
     const editor = document.getElementById('editor');
     const preview = document.getElementById('preview');
 
-    // DB初期化 (画像用ストアを追加)
     const req = indexedDB.open("MarineDB_StoredImages", 2);
     req.onupgradeneeded = (e) => {
         const d = e.target.result;
@@ -142,7 +128,7 @@
     function loadNotes() {
         db.transaction("notes").objectStore("notes").getAll().onsuccess = (e) => {
             notes = e.target.result;
-            if (notes.length === 0) createNewNote("船舶設計ノート", "# 設計開始\n画像を貼り付けてもテキストは増えません。");
+            if (notes.length === 0) createNewNote("船舶設計ノート", "# はじめに\nここにメモを記入します。");
             else { currentNoteId = notes[0].id; showNote(); }
         };
     }
@@ -154,13 +140,11 @@
     let debounceTimer;
     function debouncedUpdate() { clearTimeout(debounceTimer); debounceTimer = setTimeout(updatePreview, 300); }
 
-    // 画像置換を含むプレビュー表示
     async function updatePreview() {
         let content = editor.value;
         const imgRegex = /!\[img\]\((img-\d+)\)/g;
         let matches = [...content.matchAll(imgRegex)];
         
-        // 画像IDをバイナリURLに変換
         for (const match of matches) {
             const imgId = match[1];
             const imgObj = await getFromDB("images", imgId);
@@ -169,35 +153,30 @@
                 content = content.replace(`(${imgId})`, `(${url})`);
             }
         }
-
         preview.innerHTML = marked.parse(content);
         renderMathInElement(preview, katexConfig);
-        
         const n = notes.find(x => x.id === currentNoteId);
-        if (n) { 
-            n.content = editor.value; 
-            n.title = n.content.split('\n')[0].replace(/[#*`]/g,'').trim() || "無題";
-            saveToDB("notes", n);
-            renderList();
-        }
+        if (n) { n.content = editor.value; saveToDB("notes", n); renderList(); }
     }
 
     function getFromDB(storeName, id) {
         return new Promise(res => {
-            const req = db.transaction(storeName).objectStore(storeName).get(id);
-            req.onsuccess = () => res(req.result);
-            req.onerror = () => res(null);
+            const r = db.transaction(storeName).objectStore(storeName).get(id);
+            r.onsuccess = () => res(r.result);
         });
     }
 
     function saveToDB(storeName, obj) {
-        const tx = db.transaction(storeName, "readwrite");
-        tx.objectStore(storeName).put(obj);
+        db.transaction(storeName, "readwrite").objectStore(storeName).put(obj);
     }
 
     function renderList() {
         const l = document.getElementById('note-list'); l.innerHTML = '';
-        notes.forEach(n => { const li = document.createElement('li'); li.className = (n.id === currentNoteId ? 'active' : ''); li.innerText = n.title; li.onclick = () => { currentNoteId = n.id; showNote(); }; l.appendChild(li); });
+        notes.forEach(n => {
+            const li = document.createElement('li'); li.className = (n.id === currentNoteId ? 'active' : '');
+            li.innerText = n.title; li.onclick = () => { currentNoteId = n.id; showNote(); };
+            l.appendChild(li);
+        });
     }
 
     function createNewNote(t="新規", c="# ") {
@@ -205,7 +184,6 @@
         notes.unshift(n); currentNoteId = n.id; saveToDB("notes", n); showNote();
     }
 
-    // 画像ペースト：別ストアに保存
     editor.addEventListener('paste', async (e) => {
         for (let item of e.clipboardData.items) {
             if (item.type.includes('image')) {
@@ -219,21 +197,11 @@
         }
     });
 
-    // 転記、AI、計算系は維持
-    function copyResult(name, resId, detail) {
-        const res = document.getElementById(resId).innerText;
-        editor.setRangeText(`\n\n### 【${name}】 (${new Date().toLocaleTimeString()})\n- 条件: ${detail}\n- 結果: **${res}**\n`, editor.selectionStart, editor.selectionEnd, 'end');
-        updatePreview();
-    }
-    function applyToNote() {
-        editor.setRangeText(`\n\n---\n**AI (${new Date().toLocaleTimeString()}):**\n\n${lastAIResponse}\n`, editor.selectionStart, editor.selectionEnd, 'end');
-        updatePreview(); document.getElementById('apply-btn').style.display = "none";
-    }
     async function askAI() {
         const input = document.getElementById('ai-input'), out = document.getElementById('ai-output');
-        if(!input.value) return; out.innerText = "Thinking...";
+        if(!input.value) return; out.innerText = "解析中...";
         try {
-            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${API_KEY}`, {
+            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview-001:generateContent?key=${API_KEY}`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ contents: [{ parts: [{ text: `船舶設計助手。ノート：\n${editor.value}\n質問：${input.value}` }] }] })
             });
@@ -243,26 +211,24 @@
             renderMathInElement(out, katexConfig);
             document.getElementById('apply-btn').style.display = "inline";
             input.value = '';
-        } catch(e) { out.innerText = "Error"; }
+        } catch(e) { out.innerText = "Error: AI接続に失敗しました。"; }
     }
-    function calcAll() {
-        const bhp = parseFloat(document.getElementById('c-bhp').value) || 0;
-        document.getElementById('res-bp').innerText = (bhp * 0.015).toFixed(2);
-        const b = parseFloat(document.getElementById('c-b').value) || 0, d = parseFloat(document.getElementById('c-d').value) || 0, kg = parseFloat(document.getElementById('c-kg').value) || 0;
-        document.getElementById('res-gm').innerText = ( (d*0.53) + (b*b)/(12*d*0.75) - kg ).toFixed(3);
-        const p = parseFloat(document.getElementById('p-p').value) || 0, od = parseFloat(document.getElementById('p-od').value) || 0, f = parseFloat(document.getElementById('p-f').value) || 0;
-        document.getElementById('res-t').innerText = ( (p*od)/(2*f+p) + 3.0 ).toFixed(2);
+
+    function applyToNote() {
+        editor.setRangeText(`\n\n---\n**AI (${new Date().toLocaleTimeString()}):**\n\n${lastAIResponse}\n`, editor.selectionStart, editor.selectionEnd, 'end');
+        updatePreview(); document.getElementById('apply-btn').style.display = "none";
     }
+
     function exportNote() {
         const b = new Blob([editor.value], {type:'text/markdown'});
         const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `marine_note.md`; a.click();
     }
+
     function importNote(input) {
         const f = input.files[0]; const r = new FileReader();
         r.onload = (e) => createNewNote(f.name.replace('.md',''), e.target.result);
         r.readAsText(f);
     }
-    calcAll();
 </script>
 </body>
 </html>

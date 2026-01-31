@@ -5,9 +5,13 @@
     <title>MDメモ</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6557224818632411" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
     <style>
+        .ads-box { display: flex; flex-direction: column; background: #2d2d2d; min-height: 0; }
+        .ads-content { flex: 1; padding: 10px; overflow-y: auto; text-align: center; }
+        .tool-tips { margin-top: 15px; padding-top: 10px; border-top: 1px solid #444; color: #888; font-size: 11px; text-align: left; }
         :root { --header-h: 45px; --side-w: 220px; --ai-h: 280px; --accent: #e67e22; }
         body, html { height: 100vh; width: 100vw; margin: 0; font-family: sans-serif; overflow: hidden; background: #1a1a1a; color: #eee; }
         .wrapper { display: grid; grid-template-columns: var(--side-w) 1fr 1fr; grid-template-rows: var(--header-h) 1fr var(--ai-h); height: 100vh; }
@@ -54,31 +58,37 @@
         <textarea id="editor" spellcheck="false" oninput="debouncedUpdate()"></textarea>
     </div>
     <div class="pane"><div class="pane-header">PREVIEW</div><div id="preview"></div></div>
-    <footer>
-        <div class="ai-box">
-            <div class="pane-header">AI ASSISTANT <button id="apply-btn" style="display:none; height:18px; padding:0 8px; font-size:10px; background:#27ae60;" onclick="applyToNote()">ノートに追記</button></div>
-            <div id="ai-output"></div>
-            <div class="input-group">
-                <input type="text" id="ai-input" placeholder="設計の相談..." style="flex:1; background:#3c3c3c; border:1px solid #555; color:white; padding:5px;">
-                <button onclick="askAI()">送信</button>
+<footer>
+    <div class="ai-box">
+        <div class="pane-header">AI ASSISTANT <button id="apply-btn" style="display:none;" onclick="applyToNote()">追記</button></div>
+        <div id="ai-output"></div>
+        <div class="input-group">
+            <input type="text" id="ai-input" placeholder="設計相談...">
+            <button onclick="askAI()">送信</button>
+        </div>
+    </div>
+    
+    <div class="ads-box">
+        <div class="pane-header">INFORMATION / ADS</div>
+        <div class="ads-content">
+            <ins class="adsbygoogle"
+                 style="display:block"
+                 data-ad-client="ca-pub-6557224818632411"
+                 data-ad-slot="1240580693"
+                 data-ad-format="auto"
+                 data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            <div class="tool-tips">
+                <p>【MDmemoの使い方】</p>
+                <small>
+                    マークダウン対応のメモです。
+                    数式はKaTeXに対応しており、画像はDBに分離保存されます。
+                    右上の保存ボタンで、ローカルにMDファイルとして書き出し可能です。
+                </small>
             </div>
         </div>
-        <div class="calc-box">
-            <div class="pane-header">DESIGN CALC</div>
-            <div class="calc-section">
-                <div class="calc-row"><span>BHP:</span> <input type="number" id="c-bhp" class="calc-input" value="2000" oninput="calcAll()"> <span class="res-val" id="res-bp">0.00</span>t <button class="copy-btn" onclick="copyResult('曳航力', 'res-bp', 'BHP=' + document.getElementById('c-bhp').value)">📥</button></div>
-            </div>
-            <div class="calc-section">
-                <div class="calc-row"><span>B:</span> <input type="number" id="c-b" class="calc-input" value="9.0" oninput="calcAll()"> <span>d:</span> <input type="number" id="c-d" class="calc-input" value="3.5" oninput="calcAll()"></div>
-                <div class="calc-row"><span>KG:</span> <input type="number" id="c-kg" class="calc-input" value="3.8" oninput="calcAll()"> <strong>GM:</strong> <span class="res-val" id="res-gm">0.00</span> <button class="copy-btn" onclick="copyResult('復原性', 'res-gm', 'B=' + document.getElementById('c-b').value + ', d=' + document.getElementById('c-d').value + ', KG=' + document.getElementById('c-kg').value)">📥</button></div>
-            </div>
-            <div class="calc-section">
-                <div class="calc-row"><span>P(MPa):</span> <input type="number" id="p-p" class="calc-input" value="1.5" oninput="calcAll()"> <span>OD:</span> <input type="number" id="p-od" class="calc-input" value="60.5" oninput="calcAll()"></div>
-                <div class="calc-row"><span>f:</span> <input type="number" id="p-f" class="calc-input" value="60" oninput="calcAll()"> <strong>t:</strong> <span class="res-val" id="res-t">0.00</span> <button class="copy-btn" onclick="copyResult('管厚', 'res-t', 'P=' + document.getElementById('p-p').value + ', OD=' + document.getElementById('p-od').value)">📥</button></div>
-            </div>
-        </div>
-    </footer>
-</div>
+    </div>
+</footer></div>
 <script>
     const API_KEY = 'AIzaSyCOkouaJ_fWWBRbL76-k_V89IunGHFcv_M';
     let db, notes = [], currentNoteId = null, lastAIResponse = "";

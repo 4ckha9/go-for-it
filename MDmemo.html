@@ -9,8 +9,41 @@
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
     <style>
-        .ads-box { display: flex; flex-direction: column; background: #2d2d2d; min-height: 0; }
-        .ads-content { flex: 1; padding: 10px; overflow-y: auto; text-align: center; }
+/* 広告エリア全体のコンテナ */
+.ads-box { 
+    display: flex; 
+    flex-direction: column; 
+    background: #252526; 
+    border-left: 1px solid #444;
+    min-width: 320px; /* 300pxの広告+余白 */
+}
+
+/* 広告を固定サイズで配置する中身 */
+.ads-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+/* 広告ユニットのサイズを強制固定 */
+.ads-fixed-frame {
+    width: 300px;
+    height: 250px;
+    background: #333; /* 読み込み前のプレースホルダー色 */
+    overflow: hidden;
+}
+
+/* ポリシー対策のガイドテキスト */
+.ads-notice {
+    font-size: 10px;
+    color: #666;
+    margin-bottom: 5px;
+    text-align: center;
+}
         .tool-tips { margin-top: 15px; padding-top: 10px; border-top: 1px solid #444; color: #888; font-size: 11px; text-align: left; }
         :root { --header-h: 45px; --side-w: 220px; --ai-h: 280px; --accent: #e67e22; }
         body, html { height: 100vh; width: 100vw; margin: 0; font-family: sans-serif; overflow: hidden; background: #1a1a1a; color: #eee; }
@@ -68,27 +101,28 @@
         </div>
     </div>
     
-    <div class="ads-box">
-        <div class="pane-header">INFORMATION / ADS</div>
-        <div class="ads-content">
+<div class="ads-box">
+    <div class="pane-header">SPONSORED</div>
+    <div class="ads-content">
+        <div class="ads-notice">ADVERTISEMENT</div>
+        
+        <div class="ads-fixed-frame">
             <ins class="adsbygoogle"
-                 style="display:block"
+                 style="display:inline-block;width:300px;height:250px"
                  data-ad-client="ca-pub-6557224818632411"
-                 data-ad-slot="1240580693"
-                 data-ad-format="auto"
-                 data-full-width-responsive="true"></ins>
-            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
-            <div class="tool-tips">
-                <p>【MDmemoの使い方】</p>
-                <small>
-                    マークダウン対応のメモです。
-                    数式はKaTeXに対応しており、画像はDBに分離保存されます。
-                    右上の保存ボタンで、ローカルにMDファイルとして書き出し可能です。
-                </small>
-            </div>
+                 data-ad-slot="1240580693"></ins>
+            <script>
+                 (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+        </div>
+
+        <div style="margin-top: 20px; font-size: 11px; color: #888; text-align: left; width: 300px;">
+            <strong>MDmemo</strong><br>
+            マークダウン対応のメモ帳。
+            IndexedDBによる画像分離保存、KaTeXによる数式表示に対応。
         </div>
     </div>
-</footer></div>
+</div></footer></div>
 <script>
     const API_KEY = 'AIzaSyCOkouaJ_fWWBRbL76-k_V89IunGHFcv_M';
     let db, notes = [], currentNoteId = null, lastAIResponse = "";
